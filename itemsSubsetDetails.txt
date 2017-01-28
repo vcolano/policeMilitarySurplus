@@ -1,0 +1,46 @@
+"TRUCK,UTILITY",  "MINE RESISTANT VEHICLE", "ONLY COMPLETE COMBAT/ASSAULT/TACTICAL WHEELED VEHICLES", "RIFLE,5.56 MILLIMETER", "ILLUMINATOR,INFRARED", "TRUCK,CARGO", "TRUCK,VAN", "CARRIER,PERSONNEL,FULL TRACKED", "TRUCK,ARMORED", "FORWARD LOOKING INFRARED IMAGING SYSTEM", "TRUCK,WRECKER", "NIGHT VISION GOGGLE", "VIEWER,NIGHT VISION", "BOAT,BRIDGE ERECTION,INBOARD ENGINE", "LIGHT ARMORED VEHICLE", "RANGE FINDER,LASER", "SIGHT,REFLEX", "SHOP EQUIPMENT,AUTOMOTIVE VEHICLE", "TRUCK,STAKE", "RIFLE,7.62 MILLIMETER", "MINE RESISTANT VEHI", "TRUCK,TANK", "SIGHT,NIGHT VISION SNIPERSCOPE", "SEMITRAILER,TANK"       
+
+
+
+TRUCK,UTILITY: https://www.nsncenter.com/NSN/2320-01-146-7190#Segment H
+A military grade humvee
+
+HELICOPTER,UTILITY and HELICOPTER,OBSERVATION are both under schedule B which is defined as "military aircraft,other than fighters and cargo transports, of an unladen weight exceeding 15,000 kg". Neither are explicitly for combat so I exclude it.
+
+TRUCK TRACTOR: https://www.nsncenter.com/NSN/2320-01-272-5029
+Not explicitly for combat so I exclude it.
+
+AIRPLANE,CARGO-TRANSPORT: Couldn't find a lot on this. Not explicitly for combat so I exclude it.
+
+TRUCK,DUMP: http://www.oshkoshequipment.com/products/detail/2/5480/M929-6x6-Military-Dump-Truck-D-300-89 Not explicitly for combat so I exclude it.
+
+ILLUMINATOR,INFRARED: https://nationalstocknumber.info/national-stock-number/5855-01-465-2168 Rifle scope.
+
+TRUCK,CARGO: http://www.armyproperty.com/nsn/2320-01-050-2084/trk-cgo-d-s-m923 
+
+TRUCK,VAN: http://trucks5tonops.tpub.com/TM-55-2320-272-14-1/css/TM-55-2320-272-14-1_30.htm
+
+TRACTOR,WHEELED,INDUSTRIAL: https://nationalstocknumber.info/national-stock-number/2420-01-160-2754 Seems to be more like a real tractor, exclude.
+
+CARRIER,PERSONNEL,FULL TRACKED: https://nationalstocknumber.info/national-stock-number/2350-01-068-4077 Classified as a tank.
+
+MK3MOD0: http://www.pica.army.mil/pmccs/pmcountermine/eod/mk03.html Remote Ordinance Neutralization System
+
+FORWARD LOOKING INFRARED IMAGING SYSTEM: Night vision equipment
+
+COMMUN,EQUIP,SOMS-B: radio equipment, exclude
+
+TRUCKS AND TRUCK TRACTORS: no results, exclude
+
+TRUCK,WRECKER: military grade multipurpose truck, include
+
+TRACTOR,FULL TRACKED,LOW SPEED: bulldozer, exclude
+
+BOAT,BRIDGE ERECTION,INBOARD ENGINE: "A watercraft designed for bridge building functions such as hauling and pushing assembled floating bridge sections into position;" include
+
+ROBOT,EXPLOSIVE ORDNANCE DISPOSAL: used for defusing bombs, exclude
+
+SHOP EQUIPMENT,AUTOMOTIVE VEHICLE: military grade truck, include
+
+TRUCK,STAKE: military grade truck, include
+
