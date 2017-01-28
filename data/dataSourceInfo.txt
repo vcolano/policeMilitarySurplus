@@ -1,0 +1,11 @@
+Spending Data:
+https://github.com/TheUpshot/Military-Surplus-Gear
+
+State Population:
+2014 state population data, lost track of the source but it's
+consistent with the official US Census data
+
+County Population:
+http://www.census.gov/data/datasets/2015/demo/popest/counties-total.html
+
+
