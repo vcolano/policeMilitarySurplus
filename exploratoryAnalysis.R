@@ -115,12 +115,12 @@ statebins_continuous(states_df, "stateAbr", "spendingPerCapita", legend_position
 # Reshape data onto a county level
 counties_df = aggregate(subset_df$Acquisition.Cost, by=list(county=subset_df$County), FUN=sum)
 names(counties_df)[names(counties_df) == 'x'] = 'spending'
-counties_df$county = sapply(counties_df$county, tolower)
 counties_df$state = subset_df$State[match(counties_df$county, subset_df$County)]
+counties_df$county = sapply(counties_df$county, tolower)
 counties_df$state = sapply(state.name[match(counties_df$state, state.abb)], tolower)
 counties_df = counties_df[complete.cases(counties_df),]
-counties_df = counties_df[,c('county', 'state', 'spending')]
 counties_df = counties_df[with(counties_df, order(-spending)),]
+head(counties_df, n=10)
   
 # adjust for population
 counties_pop = fread("~/projects/policeMilitarySurplus/data/countyPopulation.csv")
@@ -128,6 +128,19 @@ counties_pop$CTYNAME = sapply(counties_pop$CTYNAME, trimws)
 counties_pop$CTYNAME = iconv(counties_pop$CTYNAME, "latin1", "UTF-8")
 counties_pop$county = sapply(counties_pop$CTYNAME, tolower)
 counties_pop$county = gsub('\\s+county', "", counties_pop$county)
-counties_pop$state = sapply(counties_pop$STATE, tolower)
+counties_pop$state = sapply(counties_pop$STNAME, tolower)
+counties_df = merge(counties_df, counties_pop)[,c('county', 'state', 'spending', 'CENSUS2010POP')]
+names(counties_df)[names(counties_df) == 'CENSUS2010POP'] = 'population'
+counties_df$spendingPerCapita = counties_df$spending / counties_df$population
+counties_df = counties_df[,c('county', 'state', 'population', 'spending', 'spendingPerCapita')]
+counties_df = counties_df[with(counties_df, order(-spendingPerCapita)),]
 
+# plot the counties which spent the most per capita
+ggplot(data = head(counties_df[order(-counties_df$spendingPerCapita), ], n=15), aes(reorder(county, -spendingPerCapita), spendingPerCapita)) + 
+  geom_histogram(stat="identity", fill="#4b5320") +
+  scale_x_discrete(labels=paste(counties_df$county, counties_df$state, sep=", ")) + 
+  scale_y_continuous(labels = comma, limits = c(0, 1250)) + 
+  theme_bw(base_size = 12, base_family = "Helvetica") +
+  theme_classic() + theme(axis.text.x = element_text(angle=45, hjust=1)) +
+  xlab("County") + ylab("Spending per capita by county in USD")
 
