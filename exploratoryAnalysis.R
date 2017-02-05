@@ -4,6 +4,9 @@ library(scales)
 library(ggmap)
 library(statebins)
 library(plyr)
+library(readxl)
+library(stringr)
+library(stringi)
 
 # import data, make column names safe
 data = fread("~/projects/policeMilitarySurplus/data/policeAcquisitionOfMilitarySurplus2014.csv")
@@ -121,18 +124,15 @@ counties_df$state = sapply(state.name[match(counties_df$state, state.abb)], tolo
 counties_df = counties_df[complete.cases(counties_df),]
 counties_df = counties_df[with(counties_df, order(-spending)),]
 head(counties_df, n=10)
-  
+
+# We'll introduce a new column to make matching easier with all of these census data sets
+counties_df$Area_name = with(counties_df, paste0(stri_trans_totitle(county), ", ", sapply(state.abb[match(stri_trans_totitle(state), state.name)], toupper)))
+
 # adjust for population
-counties_pop = fread("~/projects/policeMilitarySurplus/data/countyPopulation.csv")
-counties_pop$CTYNAME = sapply(counties_pop$CTYNAME, trimws)
-counties_pop$CTYNAME = iconv(counties_pop$CTYNAME, "latin1", "UTF-8")
-counties_pop$county = sapply(counties_pop$CTYNAME, tolower)
-counties_pop$county = gsub('\\s+county', "", counties_pop$county)
-counties_pop$state = sapply(counties_pop$STNAME, tolower)
-counties_df = merge(counties_df, counties_pop)[,c('county', 'state', 'spending', 'CENSUS2010POP')]
-names(counties_df)[names(counties_df) == 'CENSUS2010POP'] = 'population'
+pop_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyPopulationTotal1.xls", sheet = 1)
+counties_df$population = pop_df$POP010210D[match(counties_df$Area_name, pop_df$Area_name)] # POP010210D: resident population in 2010
 counties_df$spendingPerCapita = counties_df$spending / counties_df$population
-counties_df = counties_df[,c('county', 'state', 'population', 'spending', 'spendingPerCapita')]
+counties_df = counties_df[,c('county', 'state', 'population', 'spending', 'spendingPerCapita', 'Area_name')]
 counties_df = counties_df[with(counties_df, order(-spendingPerCapita)),]
 
 # plot the counties which spent the most per capita
@@ -144,3 +144,22 @@ ggplot(data = head(counties_df[order(-counties_df$spendingPerCapita), ], n=15), 
   theme_classic() + theme(axis.text.x = element_text(angle=45, hjust=1)) +
   xlab("County") + ylab("Spending per capita by county in USD")
 
+# Bring in some more county level data
+
+income_pov_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyIncomeAndPovertyData.xls", sheet = 3)
+counties_df$poverty = income_pov_df$IPE110209D[match(counties_df$Area_name, income_pov_df$Areaname)] # IPE110209D: code for people of all ages in poverty in 2009
+counties_df$povertyPerCapita = counties_df$poverty / counties_df$population
+
+crime = "CRM110208D" # number of violent crimes known to police in 2009
+white = "POP220200D" # population of single-race white people 2010
+black = "POP255210D" # population of single-race black people in 2010
+pop2010 = "AGE010210D" # resident population 2010
+pop2009 = "AGE040209D" # resident population 2009
+
+county_census_df$county = str_split_fixed(county_census_df$Area_name, ", ", 2)[,1]
+county_census_df = county_census_df[!(county_census_df$county == ""), ]
+county_census_df$county = sapply(county_census_df$county, tolower)
+county_census_df$state = str_split_fixed(county_census_df$Area_name, ", ", 2)[,2]
+county_census_df = county_census_df[!(county_census_df$state == ""), ] 
+county_census_df$state = sapply(state.name[match(county_census_df$state, state.abb)], tolower)
+counties_df_alt = merge(counties_df, county_census_df)[,c('county', 'state', 'population', 'spending', 'spendingPerCapita', 'IPE110209D')]
