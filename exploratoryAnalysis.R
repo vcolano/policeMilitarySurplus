@@ -149,6 +149,10 @@ ggplot(data = head(counties_df[order(-counties_df$spendingPerCapita), ], n=15), 
 income_pov_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyIncomeAndPovertyData.xls", sheet = 3)
 counties_df$poverty = income_pov_df$IPE110209D[match(counties_df$Area_name, income_pov_df$Areaname)] # IPE110209D: code for people of all ages in poverty in 2009
 counties_df$povertyPerCapita = counties_df$poverty / counties_df$population
+cor(counties_df$poverty, counties_df$spending, use = "complete")
+
+ggplot(counties_df, aes(x = povertyPerCapita, y = spendingPerCapita)) + geom_point()
+ggplot(counties_df, aes(x = population, y = spendingPerCapita)) + geom_point()
 
 crime = "CRM110208D" # number of violent crimes known to police in 2009
 white = "POP220200D" # population of single-race white people 2010
@@ -156,10 +160,3 @@ black = "POP255210D" # population of single-race black people in 2010
 pop2010 = "AGE010210D" # resident population 2010
 pop2009 = "AGE040209D" # resident population 2009
 
-county_census_df$county = str_split_fixed(county_census_df$Area_name, ", ", 2)[,1]
-county_census_df = county_census_df[!(county_census_df$county == ""), ]
-county_census_df$county = sapply(county_census_df$county, tolower)
-county_census_df$state = str_split_fixed(county_census_df$Area_name, ", ", 2)[,2]
-county_census_df = county_census_df[!(county_census_df$state == ""), ] 
-county_census_df$state = sapply(state.name[match(county_census_df$state, state.abb)], tolower)
-counties_df_alt = merge(counties_df, county_census_df)[,c('county', 'state', 'population', 'spending', 'spendingPerCapita', 'IPE110209D')]
