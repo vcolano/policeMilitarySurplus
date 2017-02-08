@@ -81,24 +81,24 @@ states_df$state = sapply(state.name[match(states_df$state, state.abb)], tolower)
 states_df = states_df[complete.cases(states_df),]
 
 # see who spent the most
-ggplot(data = head(states_df[order(-states_df$spending), ], n=50), aes(reorder(state, -spending), spending)) + 
+ggplot(data = head(states_df[order(-states_df$spending), ], n=10), aes(reorder(state, -spending), spending)) + 
   geom_histogram(stat="identity", fill="#4b5320") + # army green seems appropriate
   scale_x_discrete() + 
   scale_y_continuous(labels = comma, limits = c(0, 50000000)) + 
   theme_bw(base_size = 12, base_family = "Helvetica") +
-  theme_classic() +
+  theme_classic() + theme(axis.text.x = element_text(angle=45, hjust=1)) +
   xlab("State") + ylab("Spending in USD")
 
 # adjust for state population
 states_pop = fread("~/projects/policeMilitarySurplus/data/statePopulation.csv")
 states_df$spendingPerCapita = states_df$spending / states_pop[match(states_df$state, sapply(states_pop$state, tolower))]$pop_est_2014
 
-ggplot(data = head(states_df[order(-states_df$spendingPerCapita), ], n=50), aes(reorder(state, -spendingPerCapita), spendingPerCapita)) + 
+ggplot(data = head(states_df[order(-states_df$spendingPerCapita), ], n=10), aes(reorder(state, -spendingPerCapita), spendingPerCapita)) + 
   geom_histogram(stat="identity", fill="#4b5320") +
   scale_x_discrete() + 
   scale_y_continuous(labels = comma, limits = c(0, 10)) + 
   theme_bw(base_size = 12, base_family = "Helvetica") +
-  theme_classic() +
+  theme_classic() + theme(axis.text.x = element_text(angle=45, hjust=1)) +
   xlab("State") + ylab("Spending per capita by state in USD")
 
 # let's see this on a map
@@ -146,13 +146,24 @@ ggplot(data = head(counties_df[order(-counties_df$spendingPerCapita), ], n=15), 
 
 # Bring in some more county level data
 
+# Poverty
 income_pov_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyIncomeAndPovertyData.xls", sheet = 3)
 counties_df$poverty = income_pov_df$IPE110209D[match(counties_df$Area_name, income_pov_df$Areaname)] # IPE110209D: code for people of all ages in poverty in 2009
 counties_df$povertyPerCapita = counties_df$poverty / counties_df$population
-cor(counties_df$poverty, counties_df$spending, use = "complete")
+spendPovCor = format(cor(counties_df$poverty, counties_df$spending, use = "complete"), digits = 4)
+ggplot(counties_df, aes(x = log(poverty), y = log(spending))) + 
+  theme_bw(base_size = 12, base_family = "Helvetica") +
+  geom_point() + geom_smooth(method='lm', formula=y~x) +
+  ggtitle(paste("Correlation between spending and poverty = ", spendPovCor))
 
-ggplot(counties_df, aes(x = povertyPerCapita, y = spendingPerCapita)) + geom_point()
-ggplot(counties_df, aes(x = population, y = spendingPerCapita)) + geom_point()
+# Crime
+crime_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyCrime1.xls", sheet = 3)
+counties_df$crime= crime_df$CRM110208D[match(counties_df$Area_name, crime_df$Areaname)]
+spendCrimeCor = format(cor(counties_df$crime, counties_df$spending, use = "complete"), digits = 4)
+ggplot(counties_df, aes(x = log(crime), y = log(spending))) + 
+  theme_bw(base_size = 12, base_family = "Helvetica") +
+  geom_point() + geom_smooth(method='lm', formula=y~x) +
+  ggtitle(paste("Correlation between spending and poverty = ", spendCrimeCor))
 
 crime = "CRM110208D" # number of violent crimes known to police in 2009
 white = "POP220200D" # population of single-race white people 2010
