@@ -159,15 +159,21 @@ ggplot(counties_df, aes(x = log(poverty), y = log(spending))) +
 # Crime
 crime_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyCrime1.xls", sheet = 3)
 counties_df$crime= crime_df$CRM110208D[match(counties_df$Area_name, crime_df$Areaname)]
-spendCrimeCor = format(cor(counties_df$crime, counties_df$spending, use = "complete"), digits = 4)
-ggplot(counties_df, aes(x = log(crime), y = log(spending))) + 
+counties_df$crimePerCapita = counties_df$crime / counties_df$population
+spendCrimeCor = format(cor(counties_df$crimePerCapita, counties_df$spending, use = "complete"), digits = 4)
+ggplot(counties_df, aes(x = crimePerCapita, y = log(spending))) + 
   theme_bw(base_size = 12, base_family = "Helvetica") +
   geom_point() + geom_smooth(method='lm', formula=y~x) +
   ggtitle(paste("Correlation between spending and poverty = ", spendCrimeCor))
 
-crime = "CRM110208D" # number of violent crimes known to police in 2009
-white = "POP220200D" # population of single-race white people 2010
-black = "POP255210D" # population of single-race black people in 2010
-pop2010 = "AGE010210D" # resident population 2010
-pop2009 = "AGE040209D" # resident population 2009
+# Population density in 2010
+pop_dense_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyPopulationTotal1.xls", sheet = 3)
+counties_df$popDensity = pop_dense_df$POP060210D[match(counties_df$Area_name, pop_dense_df$Area_name)]
+spendPopDenseCor = format(cor(counties_df$popDensity, counties_df$spending, use = "complete"), digits = 4)
+ggplot(counties_df, aes(x = log(popDensity), y = log(spending))) + 
+  theme_bw(base_size = 12, base_family = "Helvetica") +
+  geom_point() + geom_smooth(method='lm', formula=y~x) +
+  ggtitle(paste("Correlation between spending and population density = ", spendPopDenseCor))
+
+
 
