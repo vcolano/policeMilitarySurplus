@@ -128,13 +128,24 @@ head(counties_df, n=10)
 # We'll introduce a new column to make matching easier with all of these census data sets
 counties_df$Area_name = with(counties_df, paste0(stri_trans_totitle(county), ", ", sapply(state.abb[match(stri_trans_totitle(state), state.name)], toupper)))
 
-# adjust for population
+# adjust for population and bring in counties with 0 spending
 pop_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyPopulationTotal1.xls", sheet = 1)
+counties_df = merge(counties_df, pop_df, by = "Area_name", all = TRUE)[colnames(counties_df)]
+counties_df$spending[is.na(counties_df$spending)] = 0
 counties_df$population = pop_df$POP010210D[match(counties_df$Area_name, pop_df$Area_name)] # POP010210D: resident population in 2010
+
 counties_df$spendingPerCapita = counties_df$spending / counties_df$population
 counties_df = counties_df[,c('county', 'state', 'population', 'spending', 'spendingPerCapita', 'Area_name')]
 counties_df = counties_df[with(counties_df, order(-spendingPerCapita)),]
 
+# Is population correlated with spending? 
+spendPopCor = format(cor(counties_df$population, counties_df$spending, use = "complete"), digits = 4)
+ggplot(counties_df, aes(x = log(population), y = log(spending))) + 
+  theme_bw(base_size = 12, base_family = "Helvetica") +
+  geom_point() + geom_smooth(method='lm', formula=y~x) +
+  ggtitle(paste("Correlation between spending and population = ", spendPopCor))
+
+summary(counties_df$spendingPerCapita)
 # plot the counties which spent the most per capita
 ggplot(data = head(counties_df[order(-counties_df$spendingPerCapita), ], n=15), aes(reorder(county, -spendingPerCapita), spendingPerCapita)) + 
   geom_histogram(stat="identity", fill="#4b5320") +
@@ -142,10 +153,10 @@ ggplot(data = head(counties_df[order(-counties_df$spendingPerCapita), ], n=15), 
   scale_y_continuous(labels = comma, limits = c(0, 1250)) + 
   theme_bw(base_size = 12, base_family = "Helvetica") +
   theme_classic() + theme(axis.text.x = element_text(angle=45, hjust=1)) +
-  xlab("County") + ylab("Spending per capita by county in USD")
+  xlab("County") + ylab("Spending per capita by county in USD") + 
+  ggtitle(paste("Highest spending per capita by county"))
 
 # Bring in some more county level data
-
 # Poverty
 income_pov_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyIncomeAndPovertyData.xls", sheet = 3)
 counties_df$poverty = income_pov_df$IPE110209D[match(counties_df$Area_name, income_pov_df$Areaname)] # IPE110209D: code for people of all ages in poverty in 2009
@@ -175,5 +186,14 @@ ggplot(counties_df, aes(x = log(popDensity), y = log(spending))) +
   geom_point() + geom_smooth(method='lm', formula=y~x) +
   ggtitle(paste("Correlation between spending and population density = ", spendPopDenseCor))
 
-
-
+# 2012 presidential election
+election_df = read_excel("~/projects/policeMilitarySurplus/data/election2012CountyData.xls", sheet = 1)
+election_df$Area_name = paste0(election_df$`County Name`, ", ", election_df$`State Postal`)
+election_df = election_df[!duplicated(election_df[,"Area_name"]),]
+election_df = election_df[!is.na(election_df$Area_name),]
+counties_df$republicanVote2012 = election_df$`Romney vote`[match(counties_df$Area_name, election_df$Area_name)]
+republicanVoteSpendingCor = format(cor(counties_df$republicanVote2012, counties_df$spending, use = "complete"), digits = 4)
+ggplot(counties_df, aes(x = log(republicanVote2012), y = log(spending))) + 
+  theme_bw(base_size = 12, base_family = "Helvetica") +
+  geom_point() + geom_smooth(method='lm', formula=y~x) +
+  ggtitle(paste("Correlation between spending and population density = ", republicanVoteSpendingCor))
