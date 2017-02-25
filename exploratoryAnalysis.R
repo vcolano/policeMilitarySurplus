@@ -128,15 +128,19 @@ head(counties_df, n=10)
 # We'll introduce a new column to make matching easier with all of these census data sets
 counties_df$Area_name = with(counties_df, paste0(stri_trans_totitle(county), ", ", sapply(state.abb[match(stri_trans_totitle(state), state.name)], toupper)))
 
-# adjust for population and bring in counties with 0 spending
+# adjust for population 
 pop_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyPopulationTotal1.xls", sheet = 1)
-counties_df = merge(counties_df, pop_df, by = "Area_name", all = TRUE)[colnames(counties_df)]
 counties_df$spending[is.na(counties_df$spending)] = 0
 counties_df$population = pop_df$POP010210D[match(counties_df$Area_name, pop_df$Area_name)] # POP010210D: resident population in 2010
-
 counties_df$spendingPerCapita = counties_df$spending / counties_df$population
 counties_df = counties_df[,c('county', 'state', 'population', 'spending', 'spendingPerCapita', 'Area_name')]
 counties_df = counties_df[with(counties_df, order(-spendingPerCapita)),]
+
+# note that this analysis does not take into account counties which have spent nothing on this militarized equipment
+# There are 3144 counties in the US (https://en.wikipedia.org/wiki/List_of_counties_by_U.S._state)
+print(3144 - length(counties_df$county)) # number of counties with no recorded spending
+
+
 
 # Is population correlated with spending? 
 spendPopCor = format(cor(counties_df$population, counties_df$spending, use = "complete"), digits = 4)
@@ -145,7 +149,18 @@ ggplot(counties_df, aes(x = log(population), y = log(spending))) +
   geom_point() + geom_smooth(method='lm', formula=y~x) +
   ggtitle(paste("Correlation between spending and population = ", spendPopCor))
 
-summary(counties_df$spendingPerCapita)
+summary(counties_df$spendingPerCapita) # Median and Mean imply a right skew here
+
+# plot distribution of spending per capita
+ggplot(data = counties_df, aes(x=counties_df$spendingPerCapita)) +
+  stat_density(aes(y=..count..), color="black", fill="green", alpha=0.3) +
+  stat_density(aes(y=..count..), color="black", fill="green", alpha=0.3) +
+  scale_x_continuous(breaks=c(-1,0,1,2,3,4,5,10,30,100,300,500,1000), trans="log1p", expand=c(0,0), limits=c(0,1750)) +
+  scale_y_continuous(breaks=c(0,100,200,300,400,500,600,700,750), expand=c(0,0), limits=c(0,800)) +
+  theme_bw(base_size=12, base_family="Army") + xlab("Spending Per Capita in USD") + ylab("Count") +
+  ggtitle(paste("Spending Per Capita Density on a County Level"))
+  
+  
 # plot the counties which spent the most per capita
 ggplot(data = head(counties_df[order(-counties_df$spendingPerCapita), ], n=15), aes(reorder(county, -spendingPerCapita), spendingPerCapita)) + 
   geom_histogram(stat="identity", fill="#4b5320") +
@@ -175,7 +190,7 @@ spendCrimeCor = format(cor(counties_df$crimePerCapita, counties_df$spending, use
 ggplot(counties_df, aes(x = crimePerCapita, y = log(spending))) + 
   theme_bw(base_size = 12, base_family = "Helvetica") +
   geom_point() + geom_smooth(method='lm', formula=y~x) +
-  ggtitle(paste("Correlation between spending and poverty = ", spendCrimeCor))
+  ggtitle(paste("Correlation between spending and crime = ", spendCrimeCor))
 
 # Population density in 2010
 pop_dense_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyPopulationTotal1.xls", sheet = 3)
@@ -197,3 +212,4 @@ ggplot(counties_df, aes(x = log(republicanVote2012), y = log(spending))) +
   theme_bw(base_size = 12, base_family = "Helvetica") +
   geom_point() + geom_smooth(method='lm', formula=y~x) +
   ggtitle(paste("Correlation between spending and population density = ", republicanVoteSpendingCor))
+
