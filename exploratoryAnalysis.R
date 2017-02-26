@@ -7,6 +7,7 @@ library(plyr)
 library(readxl)
 library(stringr)
 library(stringi)
+library(extrafont)
 
 # import data, make column names safe
 data = fread("~/projects/policeMilitarySurplus/data/policeAcquisitionOfMilitarySurplus2014.csv")
@@ -80,14 +81,18 @@ states_df$stateAbr = states_df$state
 states_df$state = sapply(state.name[match(states_df$state, state.abb)], tolower)
 states_df = states_df[complete.cases(states_df),]
 
+# appropriate theme
+military_theme = theme_classic() + theme(plot.title=element_text(size=20, color="#0D0A0B", vjust=1, hjust=0.5, family="Courier New"),
+                         text=element_text(size=13, hjust=0.5, family="Courier New"), 
+                         plot.background=element_rect(color="#F3EFF5"))
+
 # see who spent the most
 ggplot(data = head(states_df[order(-states_df$spending), ], n=10), aes(reorder(state, -spending), spending)) + 
   geom_histogram(stat="identity", fill="#4b5320") + # army green seems appropriate
   scale_x_discrete() + 
-  scale_y_continuous(labels = comma, limits = c(0, 50000000)) + 
-  theme_bw(base_size = 12, base_family = "Helvetica") +
-  theme_classic() + theme(axis.text.x = element_text(angle=45, hjust=1)) +
-  xlab("State") + ylab("Spending in USD")
+  scale_y_continuous(labels = comma, limits = c(0, 50000000),  expand=c(0,0)) + 
+  military_theme + theme(axis.text.x = element_text(angle=45, hjust=1)) +
+  xlab("State") + ylab("Spending in USD") + ggtitle("Top 10 Spenders") 
 
 # adjust for state population
 states_pop = fread("~/projects/policeMilitarySurplus/data/statePopulation.csv")
@@ -96,22 +101,24 @@ states_df$spendingPerCapita = states_df$spending / states_pop[match(states_df$st
 ggplot(data = head(states_df[order(-states_df$spendingPerCapita), ], n=10), aes(reorder(state, -spendingPerCapita), spendingPerCapita)) + 
   geom_histogram(stat="identity", fill="#4b5320") +
   scale_x_discrete() + 
-  scale_y_continuous(labels = comma, limits = c(0, 10)) + 
-  theme_bw(base_size = 12, base_family = "Helvetica") +
-  theme_classic() + theme(axis.text.x = element_text(angle=45, hjust=1)) +
-  xlab("State") + ylab("Spending per capita by state in USD")
+  scale_y_continuous(labels = comma, limits = c(0, 10), expand=c(0,0)) + 
+  military_theme +
+  theme(axis.text.x = element_text(angle=45, hjust=1, size = 12)) +
+  xlab("State") + ylab("Spending per capita by state in USD") + 
+  ggtitle("Top 10 Spenders per Capita")
 
 # let's see this on a map
-statebins_continuous(states_df, "stateAbr", "spending", legend_position = "bottom",
-                     legend_title="Spending in USD", font_size = 5,
+statebins(states_df, "stateAbr", "spending", legend_position = "right", breaks=5,
+                     labels=c("<$10m","<$20m","<$30m","<$40m","<$50m"), font_size = 5, legend_title="Spending in USD", 
                      brewer_pal = "Greens", text_color = "black", 
-                     plot_title = "Police aquisitions of combat-related military surplus equipment from 2006-2014",
+                     plot_title = "Spending from 2006-2014",
                      title_position = "top")
 
-statebins_continuous(states_df, "stateAbr", "spendingPerCapita", legend_position = "bottom",
+statebins(states_df, "stateAbr", "spendingPerCapita", legend_position = "right",
                      legend_title="Spending per capita by state in USD", font_size = 5,
+                     breaks = 5, labels=c("<$2","<$4","<$6","<$8","<$10"),
                      brewer_pal = "Greens", text_color = "black", 
-                     plot_title = "Police aquisitions of combat-related military surplus equipment from 2006-2014",
+                     plot_title = "Spending per Capita from 2006-2014",
                      title_position = "top")
 
 # now let's take a look at a county-level analysis
@@ -140,76 +147,92 @@ counties_df = counties_df[with(counties_df, order(-spendingPerCapita)),]
 # There are 3144 counties in the US (https://en.wikipedia.org/wiki/List_of_counties_by_U.S._state)
 print(3144 - length(counties_df$county)) # number of counties with no recorded spending
 
-
-
 # Is population correlated with spending? 
 spendPopCor = format(cor(counties_df$population, counties_df$spending, use = "complete"), digits = 4)
 ggplot(counties_df, aes(x = log(population), y = log(spending))) + 
-  theme_bw(base_size = 12, base_family = "Helvetica") +
-  geom_point() + geom_smooth(method='lm', formula=y~x) +
+  military_theme + xlab("Population (log smoothed)") + 
+  ylab("Spending (log smoothed)") +
+  geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
   ggtitle(paste("Correlation between spending and population = ", spendPopCor))
 
-summary(counties_df$spendingPerCapita) # Median and Mean imply a right skew here
+summary(counties_df$spendingPerCapita) # Median and Mean imply a right skew 
 
 # plot distribution of spending per capita
 ggplot(data = counties_df, aes(x=counties_df$spendingPerCapita)) +
-  stat_density(aes(y=..count..), color="black", fill="green", alpha=0.3) +
-  stat_density(aes(y=..count..), color="black", fill="green", alpha=0.3) +
+  stat_density(aes(y=..count..), color="#454955", fill="dark green", alpha=0.3) +
+  stat_density(aes(y=..count..), color="#454955", fill="dark green", alpha=0.3) +
   scale_x_continuous(breaks=c(-1,0,1,2,3,4,5,10,30,100,300,500,1000), trans="log1p", expand=c(0,0), limits=c(0,1750)) +
   scale_y_continuous(breaks=c(0,100,200,300,400,500,600,700,750), expand=c(0,0), limits=c(0,800)) +
-  theme_bw(base_size=12, base_family="Army") + xlab("Spending Per Capita in USD") + ylab("Count") +
-  ggtitle(paste("Spending Per Capita Density on a County Level"))
-  
+  military_theme + xlab("Spending Per Capita in USD") + ylab("Count") +
+  ggtitle("Spending Per Capita Density on a County Level")
   
 # plot the counties which spent the most per capita
 ggplot(data = head(counties_df[order(-counties_df$spendingPerCapita), ], n=15), aes(reorder(county, -spendingPerCapita), spendingPerCapita)) + 
   geom_histogram(stat="identity", fill="#4b5320") +
   scale_x_discrete(labels=paste(counties_df$county, counties_df$state, sep=", ")) + 
   scale_y_continuous(labels = comma, limits = c(0, 1250)) + 
-  theme_bw(base_size = 12, base_family = "Helvetica") +
-  theme_classic() + theme(axis.text.x = element_text(angle=45, hjust=1)) +
-  xlab("County") + ylab("Spending per capita by county in USD") + 
-  ggtitle(paste("Highest spending per capita by county"))
+  military_theme + theme(axis.text.x = element_text(angle=45, hjust=1), plot.title = element_text(hjust = 0)) +
+  xlab("County") + ylab("Spending per capita in USD") + 
+  ggtitle("Highest spending per capita by county")
 
 # Bring in some more county level data
-# Poverty
-income_pov_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyIncomeAndPovertyData.xls", sheet = 3)
-counties_df$poverty = income_pov_df$IPE110209D[match(counties_df$Area_name, income_pov_df$Areaname)] # IPE110209D: code for people of all ages in poverty in 2009
-counties_df$povertyPerCapita = counties_df$poverty / counties_df$population
-spendPovCor = format(cor(counties_df$poverty, counties_df$spending, use = "complete"), digits = 4)
-ggplot(counties_df, aes(x = log(poverty), y = log(spending))) + 
-  theme_bw(base_size = 12, base_family = "Helvetica") +
-  geom_point() + geom_smooth(method='lm', formula=y~x) +
-  ggtitle(paste("Correlation between spending and poverty = ", spendPovCor))
-
-# Crime
-crime_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyCrime1.xls", sheet = 3)
-counties_df$crime= crime_df$CRM110208D[match(counties_df$Area_name, crime_df$Areaname)]
-counties_df$crimePerCapita = counties_df$crime / counties_df$population
-spendCrimeCor = format(cor(counties_df$crimePerCapita, counties_df$spending, use = "complete"), digits = 4)
-ggplot(counties_df, aes(x = crimePerCapita, y = log(spending))) + 
-  theme_bw(base_size = 12, base_family = "Helvetica") +
-  geom_point() + geom_smooth(method='lm', formula=y~x) +
-  ggtitle(paste("Correlation between spending and crime = ", spendCrimeCor))
-
-# Population density in 2010
-pop_dense_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyPopulationTotal1.xls", sheet = 3)
-counties_df$popDensity = pop_dense_df$POP060210D[match(counties_df$Area_name, pop_dense_df$Area_name)]
-spendPopDenseCor = format(cor(counties_df$popDensity, counties_df$spending, use = "complete"), digits = 4)
-ggplot(counties_df, aes(x = log(popDensity), y = log(spending))) + 
-  theme_bw(base_size = 12, base_family = "Helvetica") +
-  geom_point() + geom_smooth(method='lm', formula=y~x) +
-  ggtitle(paste("Correlation between spending and population density = ", spendPopDenseCor))
 
 # 2012 presidential election
 election_df = read_excel("~/projects/policeMilitarySurplus/data/election2012CountyData.xls", sheet = 1)
 election_df$Area_name = paste0(election_df$`County Name`, ", ", election_df$`State Postal`)
 election_df = election_df[!duplicated(election_df[,"Area_name"]),]
 election_df = election_df[!is.na(election_df$Area_name),]
-counties_df$republicanVote2012 = election_df$`Romney vote`[match(counties_df$Area_name, election_df$Area_name)]
-republicanVoteSpendingCor = format(cor(counties_df$republicanVote2012, counties_df$spending, use = "complete"), digits = 4)
-ggplot(counties_df, aes(x = log(republicanVote2012), y = log(spending))) + 
-  theme_bw(base_size = 12, base_family = "Helvetica") +
-  geom_point() + geom_smooth(method='lm', formula=y~x) +
-  ggtitle(paste("Correlation between spending and population density = ", republicanVoteSpendingCor))
+counties_df$percentRomney = election_df$percentRomney[match(counties_df$Area_name, election_df$Area_name)]
+republicanVoteSpendingCor = format(cor(counties_df$percentRomney, counties_df$spending, use = "complete"), digits = 4)
+ggplot(counties_df, aes(x = percentRomney, y = log(spending))) + 
+  military_theme + theme(plot.title = element_text(hjust = 0)) +
+  geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
+  xlab("Percent of Voters Who Voted for Romney in 2008") + scale_x_continuous(limits=c(0,100)) +
+  ylab("Spending (log smoothed)") +
+  ggtitle(label="Spending vs. Number of Romney Voters on a County Level",
+          subtitle=paste("Correlation between Spending and Number of Romney Voters = ", republicanVoteSpendingCor))
+
+# Population density in 2010
+pop_dense_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyPopulationTotal1.xls", sheet = 3)
+counties_df$popDensity = pop_dense_df$POP060210D[match(counties_df$Area_name, pop_dense_df$Area_name)]
+spendPopDenseCor = format(cor(counties_df$popDensity, counties_df$spending, use = "complete"), digits = 4)
+ggplot(counties_df, aes(x = log(popDensity), y = log(spending))) + 
+  military_theme + theme(plot.title = element_text(hjust = 0)) +
+  geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
+  xlab("Population Density per Square Mile in 2010 (log smoothed)") + ylab("Spending (log smoothed)") +
+  ggtitle(label="Spending vs. Population Density on a County Level",
+          subtitle=paste("Correlation between spending and population density = ", spendPopDenseCor))
+
+# Crime
+crime_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyCrime1.xls", sheet = 3)
+# Averge number of violent crimes per year known to police over 2006, 2007 and 2008
+counties_df$crime= (crime_df$CRM110208D[match(counties_df$Area_name, crime_df$Areaname)] +
+                    crime_df$CRM110207D[match(counties_df$Area_name, crime_df$Areaname)] +
+                    crime_df$CRM110208D[match(counties_df$Area_name, crime_df$Areaname)]) / 3
+spendCrimeCor = format(cor(counties_df$crime, counties_df$spending, use = "complete"), digits = 4)
+ggplot(counties_df, aes(x = log(crime), y = log(spending))) + 
+  military_theme + theme(plot.title = element_text(hjust = 0)) +
+  geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
+  xlab("Average Violent Crimes Known to Police per Year from 2006-2008") + ylab("Spending (log smoothed)") +
+  ggtitle(label="Spending vs. Crime on a County Level",
+    subtitle=paste("Correlation between spending and crime = ", spendCrimeCor))
+
+# Poverty
+income_pov_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyIncomeAndPovertyData.xls", sheet = 3)
+# Average people of all ages in poverty per year from 2006-2009
+counties_df$poverty = (income_pov_df$IPE110209D[match(counties_df$Area_name, income_pov_df$Areaname)] +
+                         income_pov_df$IPE110208D[match(counties_df$Area_name, income_pov_df$Areaname)] +
+                         income_pov_df$IPE110207D[match(counties_df$Area_name, income_pov_df$Areaname)] +
+                         income_pov_df$IPE110206D[match(counties_df$Area_name, income_pov_df$Areaname)]) / 4
+spendPovCor = format(cor(counties_df$poverty, counties_df$spending, use = "complete"), digits = 4)
+ggplot(counties_df, aes(x = log(poverty), y = log(spending))) + 
+  military_theme + theme(plot.title = element_text(hjust = 0)) +
+  geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
+  xlab("Average Number of People in Poverty per Year from 2006-2009 (log smoothed)") + ylab("Spending (log smoothed)") + 
+  ggtitle(label="Spending vs. Poverty on a County Level", 
+          subtitle=paste("Correlation between spending and poverty = ", spendPovCor))
+
+
+
+
 
