@@ -8,6 +8,8 @@ library(readxl)
 library(stringr)
 library(stringi)
 library(extrafont)
+library(USA.county.data)
+library(lattice)
 
 # import data, make column names safe
 data = fread("~/projects/policeMilitarySurplus/data/policeAcquisitionOfMilitarySurplus2014.csv")
@@ -232,7 +234,40 @@ ggplot(counties_df, aes(x = log(poverty), y = log(spending))) +
   ggtitle(label="Spending vs. Poverty on a County Level", 
           subtitle=paste("Correlation between spending and poverty = ", spendPovCor))
 
+# Bring in a huge set of count-level data from https://github.com/Deleetdk/USA.county.data
+data(USA_county_data)
+counties_df$fips = election_df$FIPS[match(counties_df$Area_name, election_df$Area_name)]
+USA_county_delta = USA_county_data[sapply(USA_county_data, is.numeric)]
+USA_county_delta$spending = counties_df$spending[match(USA_county_data$fips, counties_df$spending)]
+USA_county_delta = USA_county_delta[!(USA_county_delta$spending==0 | is.na(USA_county_delta$spending)),]
+names(USA_county_delta)
+# reduce dat down to appropriate, understandable factors
+keeps = c("spending", "Mixedness", "Infant.mortality", "Injury.deaths", "Homicide.rate",
+          "Violent.crime", "Unemployment", "Uninsured", "HIV.prevalence.rate", "Sexually.transmitted.infections",
+          "Diabetes", "Adult.obesity", "Adult.smoking", "Children.in.single.parent.households", "Teen.births",
+          "Low.birthweight", "median_age", "Other", "Amerindian", "Black",
+          "White", "Production.transportation.and.material.moving.occupations", "Less.Than.High.School",                                     
+          "At.Least.High.School.Diploma", "At.Least.Bachelor.s.Degree", "Graduate.Degree", "School.Enrollment",                                         
+          "Median.Earnings.2010.dollars", "White.not.Latino.Population", "African.American.Population",                                
+          "Native.American.Population", "Asian.American.Population", "Population.some.other.race.or.races",                       
+          "Latino.Population", "Children.Under.6.Living.in.Poverty", "Adults.65.and.Older.Living.in.Poverty",                     
+          "Total.Population", "Preschool.Enrollment.Ratio.enrolled.ages.3.and.4", "Poverty.Rate.below.federal.poverty.threshold",               
+          "Gini.Coefficient", "Child.Poverty.living.in.families.below.the.poverty.line", 
+          "Management.professional.and.related.occupations", "Service.occupations", "Sales.and.office.occupations",                              
+          "Farming.fishing.and.forestry.occupations", "Construction.extraction.maintenance.and.repair.occupations")
+USA_county_delta = USA_county_delta[keeps]
+spending_cors = sort(cor(as.matrix(USA_county_delta), use="pairwise.complete.obs")["spending",])
+spending_cors = head(spending_cors, -1) # remove spending factor
 
-
-
+my.cols <- colorRampPalette(c("yellow","dark green"))
+res <- data.frame(spending_cors=spending_cors, x=seq(1,length(spending_cors)), y=rep(1,length(spending_cors)), row.names = names(spending_cors))
+trellis.par.set(clip=list(panel="off"), axis.line=list(col="transparent"))
+levelplot(spending_cors~y*x, data=res, col.regions=my.cols, 
+          colorkey=T, xlab="", ylab="", scales=list(draw=F), pretty = TRUE,
+          main=list(label="Correlation with Spending", fontfamily="Courier New"),
+          panel=function(...) {
+            panel.levelplot(...)
+            panel.text(x=rep(1, length(spending_cors)), y=seq(1, length(spending_cors)), 
+                       lab=rownames(res), fontfamily="Courier New")
+          })
 
