@@ -88,14 +88,13 @@ subset_df = data[data$Item.Name %in% subset]
 ```{r}
 subset_costs_df = count(subset_df, "Item.Name")
 subset_costs_df = subset_costs_df[with(subset_costs_df, order(-freq)), ]
-subset_costs_df$freq = subset_costs_df$freq + (1 - subset_df$Quantity[match(subset_costs_df$Item.Name, subset_df$Item.Name)])
-subset_costs_df$Total.Cost = subset_df$Acquisition.Cost[match(subset_costs_df$Item.Name, subset_df$Item.Name)]
-subset_costs_df$Total.Cost = subset_costs_df$Total.Cost*subset_costs_df$freq
+subset_costs_df$freq = subset_costs_df$freq + (subset_df$Quantity[match(subset_costs_df$Item.Name, subset_df$Item.Name)] - 1)
+subset_costs_df$Total.Cost = subset_df$Acquisition.Cost[match(subset_costs_df$Item.Name, subset_df$Item.Name)]*subset_costs_df$freq
 subset_costs_df = subset_costs_df[with(subset_costs_df, order(-Total.Cost)), ]
-length(subset) # How many different items are there in our subset?
+length(subset_costs_df$Total.Cost)
 sum(subset_costs_df$Total.Cost)
 ```
-All in all, there are 175 unique items in the subset with a total cost of \$609,547,543
+All in all, there are 175 unique items in the subset with a total cost of \$609,879,850
 
 
 ## State-level analysis
@@ -145,11 +144,11 @@ statebins(states_df, "stateAbr", "spendingPerCapita", legend_position = "right",
 
 ```{r, echo=FALSE}
 # Reshape data onto a county level
-counties_df = aggregate(subset_df$Acquisition.Cost, by=list(county=subset_df$County), FUN=sum)
+subset_df$County = sapply(subset_df$County, tolower)
+subset_df$County = sub("^(saint |st )", "st. ", subset_df$County) # Standardize counties with Saint in the name
+subset_df$State = sapply(state.name[match(subset_df$State, state.abb)], tolower)
+counties_df = aggregate(subset_df$Acquisition.Cost, by=list(county=subset_df$County, state=subset_df$State), FUN=sum)
 names(counties_df)[names(counties_df) == 'x'] = 'spending'
-counties_df$state = subset_df$State[match(counties_df$county, subset_df$County)]
-counties_df$county = sapply(counties_df$county, tolower)
-counties_df$state = sapply(state.name[match(counties_df$state, state.abb)], tolower)
 counties_df = counties_df[complete.cases(counties_df),]
 counties_df = counties_df[with(counties_df, order(-spending)),]
 head(counties_df, n=10)
@@ -159,19 +158,20 @@ counties_df$Area_name = with(counties_df, paste0(stri_trans_totitle(county), ", 
 
 # adjust for population 
 pop_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyPopulationTotal1.xls", sheet = 1)
-counties_df$spending[is.na(counties_df$spending)] = 0
 counties_df$population = pop_df$POP010210D[match(counties_df$Area_name, pop_df$Area_name)] # POP010210D: resident population in 2010
 counties_df$spendingPerCapita = counties_df$spending / counties_df$population
 counties_df = counties_df[,c('county', 'state', 'population', 'spending', 'spendingPerCapita', 'Area_name')]
 counties_df = counties_df[with(counties_df, order(-spendingPerCapita)),]
+counties_df$spending[counties_df$spending == 0] = NA
+counties_df = na.omit(counties_df)
 ```
 
 ```{r}
 # There are 3144 counties in the US (https://en.wikipedia.org/wiki/List_of_counties_by_U.S._state)
-print(3144 - length(counties_df$county)) # number of counties with no recorded spending
-print((3144 - length(counties_df$county))/3144)
+print(length(counties_df$county)) # Counties with spending > 0
+print(length(counties_df$county)/3144)
 ```
-Out of the 3144 counties in the US, 1643, or 52%, had some spending on militarized equipment. Counties which have spent nothing on militarized equipment are not taken into account in the following analyses.
+Out of the 3144 counties in the US, 2378, or 75%, had some spending on militarized equipment. Counties which have spent nothing on militarized equipment are not taken into account in the following analyses.
 
 ```{r, fig.width=12, fig.height=8}
 # Is population correlated with spending? 
@@ -183,7 +183,7 @@ ggplot(data = counties_df, aes(x = log(counties_df$population), y = log(counties
   geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
   ggtitle(paste("Correlation between spending and population = ", spendPopCor)))
 ```
-The correlation coefficient of 0.29 implies that there is a weak positive relationship between a county's police departments' spending on militarized equipment and the county's population. In simpler terms, counties with more people tend to have more militarized equipment, but not by a lot.
+The correlation coefficient of 0.47 implies that there is a positive relationship between a county's police departments' spending on militarized equipment and the county's population. In simpler terms, counties with more people tend to have more militarized equipment.
 
 ```{r, fig.width=12, fig.height=8}
 # plot distribution of spending
@@ -232,3 +232,7 @@ ggplot(data = head(counties_df[order(-counties_df$spendingPerCapita), ], n=10), 
   xlab("County") + ylab("Spending per capita in USD") +
   ggtitle("Highest spending per capita by county"))
 ```
+
+
+
+
