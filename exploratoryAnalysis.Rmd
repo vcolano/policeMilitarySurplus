@@ -45,3 +45,50 @@ head(itemFreq, n=10)
 ```
 
 
+## Total expenditure on an item-level basis
+```{r}
+costs_df = itemFreq
+costs_df$freq = costs_df$freq + (1 - data$Quantity[match(costs_df$Item.Name, data$Item.Name)])
+costs_df$Total.Cost = data$Acquisition.Cost[match(costs_df$Item.Name, data$Item.Name)]
+costs_df$Total.Cost = costs_df$Total.Cost*costs_df$freq
+costs_df$NSN = data$NSN[match(costs_df$Item.Name, data$Item.Name)] # NSN will be useful to us
+costs_df = costs_df[c("NSN", "Item.Name", "freq", "Total.Cost")] # reorder for readability
+costs_df = costs_df[with(costs_df, order(-Total.Cost)), ]
+head(costs_df, n=20)
+```
+\$195,868,316 spent on Humvee-like trucks, \$140,492,000 on mine-resistant trucks and $100,574,736 on helicopters were the three largest expenses.
+
+
+## Extracting a purely-militarized subset
+There is some equipment which is objectively non-militarized, such as the dump trucks, fork lifts and diesel generators. To focus this analysis on the militarization of US police forces we'll reduce the data to a subset that is explicitly militarized in nature, items which could serve little to no purpose in the policing of civilians. For simplicity, only the first 100 items with the highest total cost were examined manually. Other items containing keywords which indicate that they are militarized are also added.
+
+Disclaimer: There is subjectivity as to what is "militarized" and what is not. While items were thoroughly researched by looking up their NSN, the author does not have significant knowledge of this domain.
+```{r}
+subset = c("TRUCK,UTILITY",  "MINE RESISTANT VEHICLE", "ONLY COMPLETE COMBAT/ASSAULT/TACTICAL WHEELED VEHICLES",
+           "RIFLE,5.56 MILLIMETER", "ILLUMINATOR,INFRARED", "TRUCK,CARGO", "TRUCK,VAN",
+           "CARRIER,PERSONNEL,FULL TRACKED", "TRUCK,ARMORED", "FORWARD LOOKING INFRARED IMAGING SYSTEM",
+           "TRUCK,WRECKER", "NIGHT VISION GOGGLE", "VIEWER,NIGHT VISION", "BOAT,BRIDGE ERECTION,INBOARD ENGINE",
+           "LIGHT ARMORED VEHICLE", "RANGE FINDER,LASER", "SIGHT,REFLEX",
+           "SHOP EQUIPMENT,AUTOMOTIVE VEHICLE", "TRUCK,STAKE", "RIFLE,7.62 MILLIMETER", "MINE RESISTANT VEHI",
+           "TRUCK,TANK", "SIGHT,NIGHT VISION SNIPERSCOPE", "SEMITRAILER,TANK")
+subset = c(subset, unique(data$Item.Name[with(data, grepl("RIFLE", Item.Name))]))
+subset = c(subset, unique(data$Item.Name[with(data, grepl("TANK", Item.Name))]))
+subset = c(subset, unique(data$Item.Name[with(data, grepl("GRENADE", Item.Name))]))
+subset = c(subset, unique(data$Item.Name[with(data, grepl("BAYONET", Item.Name))]))
+subset = unique(subset) # remove duplicates
+
+subset_df = data[data$Item.Name %in% subset]
+```
+```{r}
+length(subset) # How many different items are there in our subset?
+```
+All in all, there are 175 unique items in the subset.
+
+
+
+
+
+
+
+
+

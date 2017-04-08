@@ -28,8 +28,6 @@ itemFreq = itemFreq[with(itemFreq, order(-freq)), ]
 head(itemFreq, n=10)
 
 # Now let's see what the total expenditure on an item-level basis is.
-# Note that we ignore quantity here because it is usually 1 and we don't need to know the total
-# expenditures precisely right now.
 costs_df = itemFreq
 costs_df$freq = costs_df$freq + (1 - data$Quantity[match(costs_df$Item.Name, data$Item.Name)])
 costs_df$Total.Cost = data$Acquisition.Cost[match(costs_df$Item.Name, data$Item.Name)]
