@@ -28,6 +28,11 @@ data = fread("~/projects/policeMilitarySurplus/data/policeAcquisitionOfMilitaryS
 colnames(data) = make.names(names(data)) # make column names R-friendly (remove spaces)
 data$Item.Name = sapply(data$Item.Name, trimws) # trim whitespace
 data = data[!(data$Item.Name == ""), ] # get rid of empty string value
+
+# make an appropriate theme for our plots later on
+military_theme = theme_classic() + 
+  theme(plot.title=element_text(size=20, color="#0D0A0B", vjust=1, hjust=0.5, family="Courier New"),
+  text=element_text(size=13, hjust=0.5, family="Courier New"), plot.background=element_rect(color="#F3EFF5"))
 ```
 
 Dataset format:
@@ -79,16 +84,91 @@ subset = unique(subset) # remove duplicates
 
 subset_df = data[data$Item.Name %in% subset]
 ```
+
 ```{r}
+subset_costs_df = count(subset_df, "Item.Name")
+subset_costs_df = subset_costs_df[with(subset_costs_df, order(-freq)), ]
+subset_costs_df$freq = subset_costs_df$freq + (1 - subset_df$Quantity[match(subset_costs_df$Item.Name, subset_df$Item.Name)])
+subset_costs_df$Total.Cost = subset_df$Acquisition.Cost[match(subset_costs_df$Item.Name, subset_df$Item.Name)]
+subset_costs_df$Total.Cost = subset_costs_df$Total.Cost*subset_costs_df$freq
+subset_costs_df = subset_costs_df[with(subset_costs_df, order(-Total.Cost)), ]
 length(subset) # How many different items are there in our subset?
+sum(subset_costs_df$Total.Cost)
 ```
-All in all, there are 175 unique items in the subset.
+All in all, there are 175 unique items in the subset with a total cost of \$609,547,543
 
 
+## State-level analysis
+```{r}
+# see who spent the most
+suppressWarnings(
+ggplot(data = head(states_df[order(-states_df$spending), ], n=10), aes(reorder(state, -spending), spending)) +
+  geom_histogram(stat="identity", fill="#4b5320") + # army green
+  scale_x_discrete() +
+  scale_y_continuous(labels = comma, limits = c(0, 50000000),  expand=c(0,0)) +
+  military_theme + theme(axis.text.x = element_text(angle=45, hjust=1)) +
+  xlab("State") + ylab("Spending in USD") + ggtitle("Top 10 Spenders"))
 
+# Adjust for population
+states_pop = fread("~/projects/policeMilitarySurplus/data/statePopulation.csv")
+states_df$spendingPerCapita = states_df$spending / states_pop[match(states_df$state, sapply(states_pop$state, tolower))]$pop_est_2014
 
+suppressWarnings(
+ggplot(data = head(states_df[order(-states_df$spendingPerCapita), ], n=10), aes(reorder(state, -spendingPerCapita), spendingPerCapita)) +
+  geom_histogram(stat="identity", fill="#4b5320") +
+  scale_x_discrete() +
+  scale_y_continuous(labels = comma, limits = c(0, 10), expand=c(0,0)) +
+  military_theme +
+  theme(axis.text.x = element_text(angle=45, hjust=1, size = 12)) +
+  xlab("State") + ylab("Spending per capita in USD") +
+  ggtitle("Top 10 Spenders per Capita"))
+```
 
+```{r}
+# let's see this on a map
+suppressWarnings(
+statebins(states_df, "stateAbr", "spending", legend_position = "right", breaks=5,
+                     labels=c("<$10m","<$20m","<$30m","<$40m","<$50m"), font_size = 5, legend_title="Spending in USD",
+                     brewer_pal = "Greens", text_color = "black",
+                     plot_title = "Total Spending from 2006-2014",
+                     title_position = "top"))
+suppressWarnings(
+statebins(states_df, "stateAbr", "spendingPerCapita", legend_position = "right",
+                     legend_title="Spending per capita by state in USD", font_size = 5,
+                     breaks = 5, labels=c("<$2","<$4","<$6","<$8","<$10"),
+                     brewer_pal = "Greens", text_color = "black",
+                     plot_title = "Spending per Capita from 2006-2014",
+                     title_position = "top"))
+```
 
+## County-level analysis
 
+```{r, echo=FALSE}
+# Reshape data onto a county level
+counties_df = aggregate(subset_df$Acquisition.Cost, by=list(county=subset_df$County), FUN=sum)
+names(counties_df)[names(counties_df) == 'x'] = 'spending'
+counties_df$state = subset_df$State[match(counties_df$county, subset_df$County)]
+counties_df$county = sapply(counties_df$county, tolower)
+counties_df$state = sapply(state.name[match(counties_df$state, state.abb)], tolower)
+counties_df = counties_df[complete.cases(counties_df),]
+counties_df = counties_df[with(counties_df, order(-spending)),]
+head(counties_df, n=10)
 
+# We'll introduce a new column to make matching easier with all of these census data sets
+counties_df$Area_name = with(counties_df, paste0(stri_trans_totitle(county), ", ", sapply(state.abb[match(stri_trans_totitle(state), state.name)], toupper)))
 
+# adjust for population 
+pop_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyPopulationTotal1.xls", sheet = 1)
+counties_df$spending[is.na(counties_df$spending)] = 0
+counties_df$population = pop_df$POP010210D[match(counties_df$Area_name, pop_df$Area_name)] # POP010210D: resident population in 2010
+counties_df$spendingPerCapita = counties_df$spending / counties_df$population
+counties_df = counties_df[,c('county', 'state', 'population', 'spending', 'spendingPerCapita', 'Area_name')]
+counties_df = counties_df[with(counties_df, order(-spendingPerCapita)),]
+```
+
+```{r}
+# There are 3144 counties in the US (https://en.wikipedia.org/wiki/List_of_counties_by_U.S._state)
+print(3144 - length(counties_df$county)) # number of counties with no recorded spending
+print((3144 - length(counties_df$county))/3144)
+```
+Out of the 3144 counties in the US, 1643, or 52%, had some spending on militarized equipment. Counties which have spent nothing on militarized equipment are not taken into account in the following analyses.

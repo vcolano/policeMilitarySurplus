@@ -19,6 +19,11 @@ colnames(data) = make.names(names(data)) # make column names R-friendly (remove 
 data$Item.Name = sapply(data$Item.Name, trimws) # trim whitespace
 data = data[!(data$Item.Name == ""), ] # get rid of empty string value
 
+# make an appropriate theme for our plots later on
+military_theme = theme_classic() + 
+  theme(plot.title=element_text(size=20, color="#0D0A0B", vjust=1, hjust=0.5, family="Courier New"),
+  text=element_text(size=13, hjust=0.5, family="Courier New"), plot.background=element_rect(color="#F3EFF5"))
+
 colnames(data)
 # NSN stands for NATO Stock Number, it's used to identify military supplies in the US and across NATO countries
 
@@ -76,11 +81,6 @@ states_df$stateAbr = states_df$state
 states_df$state = sapply(state.name[match(states_df$state, state.abb)], tolower)
 states_df = states_df[complete.cases(states_df),]
 
-# appropriate theme
-military_theme = theme_classic() + theme(plot.title=element_text(size=20, color="#0D0A0B", vjust=1, hjust=0.5, family="Courier New"),
-                         text=element_text(size=13, hjust=0.5, family="Courier New"), 
-                         plot.background=element_rect(color="#F3EFF5"))
-
 # see who spent the most
 ggplot(data = head(states_df[order(-states_df$spending), ], n=10), aes(reorder(state, -spending), spending)) + 
   geom_histogram(stat="identity", fill="#4b5320") + # army green seems appropriate
@@ -99,7 +99,7 @@ ggplot(data = head(states_df[order(-states_df$spendingPerCapita), ], n=10), aes(
   scale_y_continuous(labels = comma, limits = c(0, 10), expand=c(0,0)) + 
   military_theme +
   theme(axis.text.x = element_text(angle=45, hjust=1, size = 12)) +
-  xlab("State") + ylab("Spending per capita by state in USD") + 
+  xlab("State") + ylab("Spending per capita in USD") + 
   ggtitle("Top 10 Spenders per Capita")
 
 # let's see this on a map
