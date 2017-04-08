@@ -67,9 +67,8 @@ subset_df = data[data$Item.Name %in% subset]
 
 subset_costs_df = count(subset_df, "Item.Name")
 subset_costs_df = subset_costs_df[with(subset_costs_df, order(-freq)), ]
-subset_costs_df$freq = subset_costs_df$freq + (1 - subset_df$Quantity[match(subset_costs_df$Item.Name, subset_df$Item.Name)])
-subset_costs_df$Total.Cost = subset_df$Acquisition.Cost[match(subset_costs_df$Item.Name, subset_df$Item.Name)]
-subset_costs_df$Total.Cost = subset_costs_df$Total.Cost*subset_costs_df$freq
+subset_costs_df$freq = subset_costs_df$freq + (subset_df$Quantity[match(subset_costs_df$Item.Name, subset_df$Item.Name)] - 1)
+subset_costs_df$Total.Cost = subset_df$Acquisition.Cost[match(subset_costs_df$Item.Name, subset_df$Item.Name)]*subset_costs_df$freq
 subset_costs_df = subset_costs_df[with(subset_costs_df, order(-Total.Cost)), ]
 head(subset_costs_df, n=10)
 sum(subset_costs_df$Total.Cost)
@@ -118,11 +117,11 @@ statebins(states_df, "stateAbr", "spendingPerCapita", legend_position = "right",
 
 # now let's take a look at a county-level analysis
 # Reshape data onto a county level
-counties_df = aggregate(subset_df$Acquisition.Cost, by=list(county=subset_df$County), FUN=sum)
+subset_df$County = sapply(subset_df$County, tolower)
+subset_df$County = sub("^(saint |st )", "st. ", subset_df$County) # Standardize counties with Saint in the name
+subset_df$State = sapply(state.name[match(subset_df$State, state.abb)], tolower)
+counties_df = aggregate(subset_df$Acquisition.Cost, by=list(county=subset_df$County, state=subset_df$State), FUN=sum)
 names(counties_df)[names(counties_df) == 'x'] = 'spending'
-counties_df$state = subset_df$State[match(counties_df$county, subset_df$County)]
-counties_df$county = sapply(counties_df$county, tolower)
-counties_df$state = sapply(state.name[match(counties_df$state, state.abb)], tolower)
 counties_df = counties_df[complete.cases(counties_df),]
 counties_df = counties_df[with(counties_df, order(-spending)),]
 head(counties_df, n=10)
@@ -132,15 +131,16 @@ counties_df$Area_name = with(counties_df, paste0(stri_trans_totitle(county), ", 
 
 # adjust for population 
 pop_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyPopulationTotal1.xls", sheet = 1)
-counties_df$spending[is.na(counties_df$spending)] = 0
 counties_df$population = pop_df$POP010210D[match(counties_df$Area_name, pop_df$Area_name)] # POP010210D: resident population in 2010
 counties_df$spendingPerCapita = counties_df$spending / counties_df$population
 counties_df = counties_df[,c('county', 'state', 'population', 'spending', 'spendingPerCapita', 'Area_name')]
 counties_df = counties_df[with(counties_df, order(-spendingPerCapita)),]
+counties_df$spending[counties_df$spending == 0] = NA
+counties_df = na.omit(counties_df)
 
 # note that this analysis does not take into account counties which have spent nothing on this militarized equipment
 # There are 3144 counties in the US (https://en.wikipedia.org/wiki/List_of_counties_by_U.S._state)
-print(3144 - length(counties_df$county)) # number of counties with no recorded spending
+print(length(counties_df$county)) # number of counties with no recorded spending
 
 # Is population correlated with spending? 
 spendPopCor = format(cor(counties_df$population, counties_df$spending, use = "complete"), digits = 4)
@@ -159,7 +159,7 @@ ggplot(data = counties_df, aes(x=counties_df$spending)) +
   scale_x_continuous(breaks=c(0, 100, 1000, 5000, 25000, 100000, 500000, 1000000, 3000000, 10000000), 
                      labels=c("$0","$100","$1k","$5k","$25k","$100k","$500k","$1mil","$3mil","$10mil"),
                      trans="log1p", expand=c(0,0), limits=c(0,100000000)) +
-  scale_y_continuous(breaks=c(0, 50, 100, 150, 200, 250), expand=c(0,0), limits=c(0,250)) +
+  scale_y_continuous(breaks=c(0, 50, 100, 150, 200, 400), expand=c(0,0), limits=c(0,250)) +
   military_theme + xlab("Spending Per Capita in USD") + ylab("Count") +
   theme(axis.text.x = element_text(angle=45, hjust=1)) +
   ggtitle("Total Spending Density on a County Level")
