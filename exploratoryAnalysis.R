@@ -10,8 +10,10 @@ library(stringi)
 library(extrafont)
 library(USA.county.data)
 library(lattice)
+#library(devtools)
+#devtools::install_github("deleetdk/USA.county.data") # only need to load this once
 
-# import data, make column names safe
+# import main data set
 data = fread("~/projects/policeMilitarySurplus/data/policeAcquisitionOfMilitarySurplus2014.csv")
 colnames(data) = make.names(names(data)) # make column names R-friendly (remove spaces)
 data$Item.Name = sapply(data$Item.Name, trimws) # trim whitespace
@@ -113,7 +115,7 @@ ggplot(data = head(states_df[order(-states_df$spendingPerCapita), ], n=10), aes(
 statebins(states_df, "stateAbr", "spending", legend_position = "right", breaks=5,
                      labels=c("<$10m","<$20m","<$30m","<$40m","<$50m"), font_size = 5, legend_title="Spending in USD", 
                      brewer_pal = "Greens", text_color = "black", 
-                     plot_title = "Spending from 2006-2014",
+                     plot_title = "Total Spending from 2006-2014",
                      title_position = "top")
 
 statebins(states_df, "stateAbr", "spendingPerCapita", legend_position = "right",
@@ -151,9 +153,9 @@ print(3144 - length(counties_df$county)) # number of counties with no recorded s
 
 # Is population correlated with spending? 
 spendPopCor = format(cor(counties_df$population, counties_df$spending, use = "complete"), digits = 4)
-ggplot(counties_df, aes(x = log(population), y = log(spending))) + 
+ggplot(data = counties_df, aes(x = log(counties_df$population), y = log(counties_df$spending))) + 
   military_theme + xlab("Population (log smoothed)") + 
-  ylab("Spending (log smoothed)")
+  ylab("Spending (log smoothed)") +
   geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
   ggtitle(paste("Correlation between spending and population = ", spendPopCor))
 
