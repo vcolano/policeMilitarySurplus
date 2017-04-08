@@ -5,11 +5,9 @@ output:
   html_document: default
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-
-Load libraries and import the first police acquisitions data set.
+## Setup
+Load libraries and import the police acquisitions data set.
 ```{r, results='hide'}
 library(data.table)
 library(ggplot2)
@@ -26,13 +24,11 @@ library(lattice)
 #library(devtools)
 #devtools::install_github("deleetdk/USA.county.data") # only need to load this once
 
-# import main data set
 data = fread("~/projects/policeMilitarySurplus/data/policeAcquisitionOfMilitarySurplus2014.csv")
 colnames(data) = make.names(names(data)) # make column names R-friendly (remove spaces)
 data$Item.Name = sapply(data$Item.Name, trimws) # trim whitespace
 data = data[!(data$Item.Name == ""), ] # get rid of empty string value
 ```
-
 
 Dataset format:
 ```{r, echo=TRUE}
@@ -41,12 +37,11 @@ head(data, n=1)
 NSN stands for NATO Stock Number, it's a unique identifier for military supplies across NATO nations
 
 
-Which items were purchased the most?
+## Which items were purchased the most?
 ```{r}
-nsnFreq = count(data, "NSN")
-nsnFreq$Item.Name = data$Item.Name[match(nsnFreq$NSN, data$NSN)]
-nsnFreq = nsnFreq[with(nsnFreq, order(-freq)), ]
-head(nsnFreq, n=10)
+itemFreq = count(data, "Item.Name")
+itemFreq = itemFreq[with(itemFreq, order(-freq)), ]
+head(itemFreq, n=10)
 ```
 
 

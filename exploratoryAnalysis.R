@@ -22,17 +22,10 @@ data = data[!(data$Item.Name == ""), ] # get rid of empty string value
 colnames(data)
 # NSN stands for NATO Stock Number, it's used to identify military supplies in the US and across NATO countries
 
-# which items are purchased the most?
-nsnFreq = count(data, "NSN")
-nsnFreq$Item.Name = data$Item.Name[match(nsnFreq$NSN, data$NSN)]
-nsnFreq = nsnFreq[with(nsnFreq, order(-freq)), ]
-head(nsnFreq, n=10)
-
-# Let's see if sorting on names cleans things up
+# Which items were purchased most? 
 itemFreq = count(data, "Item.Name")
 itemFreq = itemFreq[with(itemFreq, order(-freq)), ]
 head(itemFreq, n=10)
-# It does and everything adds up so we'll use Item.Name
 
 # Now let's see what the total expenditure on an item-level basis is.
 # Note that we ignore quantity here because it is usually 1 and we don't need to know the total
