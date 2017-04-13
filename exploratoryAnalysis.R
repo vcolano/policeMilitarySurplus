@@ -159,7 +159,7 @@ ggplot(data = counties_df, aes(x=counties_df$spending)) +
   scale_x_continuous(breaks=c(0, 100, 1000, 5000, 25000, 100000, 500000, 1000000, 3000000, 10000000), 
                      labels=c("$0","$100","$1k","$5k","$25k","$100k","$500k","$1mil","$3mil","$10mil"),
                      trans="log1p", expand=c(0,0), limits=c(0,100000000)) +
-  scale_y_continuous(breaks=c(0, 50, 100, 150, 200, 400), expand=c(0,0), limits=c(0,250)) +
+  scale_y_continuous(breaks=c(0, 50, 100, 150, 200, 250, 300, 350, 400), expand=c(0,0), limits=c(0,400)) +
   military_theme + xlab("Spending Per Capita in USD") + ylab("Count") +
   theme(axis.text.x = element_text(angle=45, hjust=1)) +
   ggtitle("Total Spending Density on a County Level")
@@ -169,7 +169,7 @@ ggplot(data = counties_df, aes(x=counties_df$spendingPerCapita)) +
   stat_density(aes(y=..count..), color="#454955", fill="dark green", alpha=0.3) +
   stat_density(aes(y=..count..), color="#454955", fill="dark green", alpha=0.3) +
   scale_x_continuous(breaks=c(-1,0,1,2,3,4,5,10,30,100,300,500,1000), trans="log1p", expand=c(0,0), limits=c(0,1750)) +
-  scale_y_continuous(breaks=c(0,100,200,300,400,500,600,700,750), expand=c(0,0), limits=c(0,800)) +
+  scale_y_continuous(breaks=c(250,500,750,1000,1250,1500,1750,2000), expand=c(0,0), limits=c(0,2000)) +
   military_theme + xlab("Spending Per Capita in USD") + ylab("Count") +
   ggtitle("Spending Per Capita Density on a County Level")
 
@@ -177,8 +177,8 @@ ggplot(data = counties_df, aes(x=counties_df$spendingPerCapita)) +
 highest_spenders = head(counties_df[order(-counties_df$spending), ], n=10)
 ggplot(data = highest_spenders, aes(x=reorder(Area_name, -spending), y=spending)) + 
   geom_histogram(stat="identity", fill="#4b5320") +
-  scale_y_continuous(breaks=c(0, 5000000, 10000000, 15000000), 
-                     labels=c("0", "5mil","10mil", "15mil")) + 
+  scale_y_continuous(breaks=c(2000000, 4000000, 6000000, 8000000),
+                     labels=c("$2mil", "$4mil", "$6mil", "$8mil")) + 
   military_theme + theme(axis.text.x = element_text(angle=45, hjust=1), plot.title = element_text(hjust = 0)) +
   xlab("County") + ylab("Total Spending in USD") + 
   ggtitle("Highest spending by county")
@@ -187,7 +187,7 @@ ggplot(data = highest_spenders, aes(x=reorder(Area_name, -spending), y=spending)
 ggplot(data = head(counties_df[order(-counties_df$spendingPerCapita), ], n=10), aes(reorder(county, -spendingPerCapita), spendingPerCapita)) + 
   geom_histogram(stat="identity", fill="#4b5320") +
   scale_x_discrete(labels=counties_df$Area_name) + 
-  scale_y_continuous(labels = comma, limits = c(0, 1250)) + 
+  scale_y_continuous(labels = comma, limits = c(0, 300)) + 
   military_theme + theme(axis.text.x = element_text(angle=45, hjust=1), plot.title = element_text(hjust = 0)) +
   xlab("County") + ylab("Spending per capita in USD") + 
   ggtitle("Highest spending per capita by county")
@@ -284,7 +284,7 @@ ggplot(USA_county_delta, aes(x = White, y = log(spending))) +
   geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
   xlab("Percent White") + ylab("Spending (log smoothed)") +
   ggtitle(label="Spending vs. Percent Whiteness on a County Level",
-          subtitle=paste("Correlation between spending and Whiteness = ", spending_cors["White"]))
+          subtitle=paste("Correlation between spendinnd Whiteness = ", spending_cors["White"]))
 
 ggplot(USA_county_delta, aes(x = median_age, y = log(spending))) + 
   military_theme + theme(plot.title = element_text(hjust = 0)) +

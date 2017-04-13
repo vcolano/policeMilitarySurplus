@@ -1,8 +1,8 @@
 ---
 title: "An Exploratory Analysis of Police Acquisition of Militarized Equipment"
 output:
-  html_notebook: default
   html_document: default
+  html_notebook: default
 ---
 
 
