@@ -170,7 +170,7 @@ ggplot(data = counties_df, aes(x=counties_df$spendingPerCapita)) +
   stat_density(aes(y=..count..), color="#454955", fill="dark green", alpha=0.3) +
   scale_x_continuous(breaks=c(-1,0,1,2,3,4,5,10,30,100,300,500,1000), trans="log1p", expand=c(0,0), limits=c(0,1750)) +
   scale_y_continuous(breaks=c(250,500,750,1000,1250,1500,1750,2000), expand=c(0,0), limits=c(0,2000)) +
-  military_theme + xlab("Spending Per Capita in USD") + ylab("Count") +
+  military_theme + xlab("Spending Per Capita in USD") + ylab("Number of Counties") +
   ggtitle("Spending Per Capita Density on a County Level")
 
 # plot the counties which spent the most 
@@ -189,7 +189,7 @@ ggplot(data = head(counties_df[order(-counties_df$spendingPerCapita), ], n=10), 
   scale_x_discrete(labels=counties_df$Area_name) + 
   scale_y_continuous(labels = comma, limits = c(0, 300)) + 
   military_theme + theme(axis.text.x = element_text(angle=45, hjust=1), plot.title = element_text(hjust = 0)) +
-  xlab("County") + ylab("Spending per capita in USD") + 
+  xlab("Number of Counties") + ylab("Spending per capita in USD") + 
   ggtitle("Highest spending per capita by county")
 
 # Bring in some external county-level data
