@@ -237,6 +237,10 @@ Most of these counties are very rural with populatiosn under 5000, a couple larg
 
 
 ## Bringing in external county-level data
+This data comes from three sources:   
+1. [US Census County Data](https://www.census.gov/support/USACdataDownloads.html#RHI)  
+2. [2012 Presidential Election County-Level Data from The Guardian](https://www.theguardian.com/news/datablog/2012/nov/07/us-2012-election-county-results-download#data)  
+3. [A Multifactor US County-Level Dataset](https://github.com/Deleetdk/USA.county.data) put together by [Emil O. W. Kirkegaard](https://openpsych.net/person/1) for his 2016 paper [Inequality across US counties: an S factor analysis](https://openpsych.net/paper/12)  
 
 ```{r, results='hide'}
 # 2012 presidential election
@@ -246,7 +250,10 @@ election_df = election_df[!duplicated(election_df[,"Area_name"]),]
 election_df = election_df[!is.na(election_df$Area_name),]
 counties_df$percentRomney = election_df$percentRomney[match(counties_df$Area_name, election_df$Area_name)]
 republicanVoteSpendingCor = format(cor(counties_df$percentRomney, counties_df$spending, use = "complete"), digits = 4)
+```
 
+
+```{r, results='hide'}
 # Population density in 2010
 pop_dense_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyPopulationTotal1.xls", sheet = 3)
 counties_df$popDensity = pop_dense_df$POP060210D[match(counties_df$Area_name, pop_dense_df$Area_name)]
