@@ -4,7 +4,18 @@ output:
   html_notebook: default
   html_document: default
 ---
+## Introduction
+The United States Defence Department's [1033 program](https://en.wikipedia.org/wiki/1033_program) began in 1997, it allows for the transfer of excess military equipment to civilian law enforcement agencies. Most of the equipment obtained are things such as cold weather clothing, deisel generators and flashlights. However, a significant portion of it is explicitly combat-orientated in nature, such as M-16 rifles, tanks, and mine-resistant vehicles.  
+  
+This is an analysis that explores U.S. civilian law enforcement spending on the acquisition of military equipment that is explicitly combat-orientated. Spending is examined at a state and county level, other county-level data such as crime and poverty rates are incorporated and their relationship to spending is also investigated.  
+  
+Please e-mail comments and suggestions to [vcolano@gmail.com](mailto:vcolano@gmail.com).
 
+## About the data
+In May 2014 the New York Times filed a freedom of information act request and received from the Pentagon data on all acquisitions since 2006. The data was made public by the NYT and can be found [here](https://github.com/TheUpshot/Military-Surplus-Gear). The NYT wrote a post with an interactive data visualization on the topic: [What Military Gear Your Local Police Department Bought
+](https://www.nytimes.com/2014/08/20/upshot/data-on-transfer-of-military-gear-to-police-departments.html).  
+  
+The data includes all acquisitons from 2006 to May of 2016 on a State and County level.
 
 ## Setup
 Load libraries and import the police acquisitions data set.
@@ -99,6 +110,13 @@ All in all, there are 175 unique items in the subset with a total cost of \$609,
 
 ## State-level analysis
 ```{r}
+# Reshape data onto a state level
+states_df = aggregate(subset_df$Acquisition.Cost, by=list(state=subset_df$State), FUN=sum)
+names(states_df)[names(states_df) == 'x'] = 'spending'
+states_df$stateAbr = states_df$state
+states_df$state = sapply(state.name[match(states_df$state, state.abb)], tolower)
+states_df = states_df[complete.cases(states_df),]
+
 # see who spent the most
 suppressWarnings(
 ggplot(data = head(states_df[order(-states_df$spending), ], n=10), aes(reorder(state, -spending), spending)) +
@@ -240,7 +258,8 @@ Most of these counties are very rural with populatiosn under 5000, a couple larg
 This data comes from three sources:   
 1. [US Census County Data](https://www.census.gov/support/USACdataDownloads.html#RHI)  
 2. [2012 Presidential Election County-Level Data from The Guardian](https://www.theguardian.com/news/datablog/2012/nov/07/us-2012-election-county-results-download#data)  
-3. [A Multifactor US County-Level Dataset](https://github.com/Deleetdk/USA.county.data) put together by [Emil O. W. Kirkegaard](https://openpsych.net/person/1) for his 2016 paper [Inequality across US counties: an S factor analysis](https://openpsych.net/paper/12)  
+3. [A Multifactor US County-Level Dataset](https://github.com/Deleetdk/USA.county.data) put together by [Emil O. W. Kirkegaard](https://openpsych.net/person/1) for his 2016 paper [Inequality across US counties: an S factor analysis](https://openpsych.net/paper/12)
+* The factors in this data set do not have detailed descriptions and it has no data from 2008-2012, though most of the factors are from other time spans in between 2006-2014. Only factors with titles that were easily interpretable are used.
 
 ```{r, results='hide'}
 # 2012 presidential election
@@ -305,6 +324,44 @@ USA_county_delta = USA_county_delta[keeps]
 spending_cors = sort(cor(as.matrix(USA_county_delta), use="pairwise.complete.obs")["spending",])
 spending_cors = head(spending_cors, -1) # remove spending factor
 ```
+```{r, fig.width=12, fig.height=8}
+my.cols <- colorRampPalette(c("blue","red"))
+res <- data.frame(spending_cors=spending_cors, x=seq(1,length(spending_cors)), y=rep(1,length(spending_cors)), row.names = names(spending_cors))
+trellis.par.set(clip=list(panel="off"), axis.line=list(col="transparent"))
+levelplot(spending_cors~y*x, data=res, col.regions=my.cols,
+          colorkey=list(), region=T, xlab="", ylab="", scales=list(draw=F), pretty = TRUE,
+          main=list(label="Correlation with Spending", fontfamily="Courier New"),
+          panel=function(...) {
+            panel.levelplot(...)
+            panel.text(x=rep(1, length(spending_cors)), y=seq(1, length(spending_cors)), 
+                       lab=rownames(res), fontfamily="Courier New")
+          })
 
+ggplot(counties_df, aes(x = log(poverty), y = log(spending))) + 
+  military_theme + theme(plot.title = element_text(hjust = 0)) +
+  geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
+  xlab("Average Number of People in Poverty per Year from 2006-2009 (log smoothed)") + ylab("Spending (log smoothed)") + 
+  ggtitle(label="Spending vs. Poverty on a County Level", 
+          subtitle=paste("Correlation between spending and poverty = ", spendPovCor))
 
+ggplot(counties_df, aes(x = log(crime), y = log(spending))) + 
+  military_theme + theme(plot.title = element_text(hjust = 0)) +
+  geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
+  xlab("Average Violent Crimes Known to Police per Year from 2006-2008") + ylab("Spending (log smoothed)") +
+  ggtitle(label="Spending vs. Crime on a County Level",
+          subtitle=paste("Correlation between spending and crime = ", spendCrimeCor))
 
+ggplot(USA_county_delta, aes(x = White, y = log(spending))) + 
+  military_theme + theme(plot.title = element_text(hjust = 0)) +
+  geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
+  xlab("Percent White") + ylab("Spending (log smoothed)") +
+  ggtitle(label="Spending vs. Percent Whiteness on a County Level",
+          subtitle=paste("Correlation between spendinnd Whiteness = ", spending_cors["White"]))
+
+ggplot(USA_county_delta, aes(x = median_age, y = log(spending))) + 
+  military_theme + theme(plot.title = element_text(hjust = 0)) +
+  geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
+  xlab("Median Age") + ylab("Spending (log smoothed)") +
+  ggtitle(label="Spending vs. Median Age on a County Level",
+          subtitle=paste("Correlation between spending and median age = ", spending_cors["median_age"]))
+```
