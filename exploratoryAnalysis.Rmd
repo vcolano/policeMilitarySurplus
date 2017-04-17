@@ -269,10 +269,7 @@ election_df = election_df[!duplicated(election_df[,"Area_name"]),]
 election_df = election_df[!is.na(election_df$Area_name),]
 counties_df$percentRomney = election_df$percentRomney[match(counties_df$Area_name, election_df$Area_name)]
 republicanVoteSpendingCor = format(cor(counties_df$percentRomney, counties_df$spending, use = "complete"), digits = 4)
-```
 
-
-```{r, results='hide'}
 # Population density in 2010
 pop_dense_df = read_excel("~/projects/policeMilitarySurplus/data/censusCountyPopulationTotal1.xls", sheet = 3)
 counties_df$popDensity = pop_dense_df$POP060210D[match(counties_df$Area_name, pop_dense_df$Area_name)]
@@ -324,7 +321,9 @@ USA_county_delta = USA_county_delta[keeps]
 spending_cors = sort(cor(as.matrix(USA_county_delta), use="pairwise.complete.obs")["spending",])
 spending_cors = head(spending_cors, -1) # remove spending factor
 ```
-```{r, fig.width=12, fig.height=8}
+
+
+```{r, fig.width=14, fig.height=13}
 my.cols <- colorRampPalette(c("blue","red"))
 res <- data.frame(spending_cors=spending_cors, x=seq(1,length(spending_cors)), y=rep(1,length(spending_cors)), row.names = names(spending_cors))
 trellis.par.set(clip=list(panel="off"), axis.line=list(col="transparent"))
@@ -336,28 +335,36 @@ levelplot(spending_cors~y*x, data=res, col.regions=my.cols,
             panel.text(x=rep(1, length(spending_cors)), y=seq(1, length(spending_cors)), 
                        lab=rownames(res), fontfamily="Courier New")
           })
+```
 
+```{r, fig.width=12, fig.height=8}
 ggplot(counties_df, aes(x = log(poverty), y = log(spending))) + 
   military_theme + theme(plot.title = element_text(hjust = 0)) +
   geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
   xlab("Average Number of People in Poverty per Year from 2006-2009 (log smoothed)") + ylab("Spending (log smoothed)") + 
   ggtitle(label="Spending vs. Poverty on a County Level", 
           subtitle=paste("Correlation between spending and poverty = ", spendPovCor))
+```
 
+```{r, fig.width=12, fig.height=8}
 ggplot(counties_df, aes(x = log(crime), y = log(spending))) + 
   military_theme + theme(plot.title = element_text(hjust = 0)) +
   geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
   xlab("Average Violent Crimes Known to Police per Year from 2006-2008") + ylab("Spending (log smoothed)") +
   ggtitle(label="Spending vs. Crime on a County Level",
           subtitle=paste("Correlation between spending and crime = ", spendCrimeCor))
+```
 
+```{r, fig.width=12, fig.height=8}
 ggplot(USA_county_delta, aes(x = White, y = log(spending))) + 
   military_theme + theme(plot.title = element_text(hjust = 0)) +
   geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
   xlab("Percent White") + ylab("Spending (log smoothed)") +
   ggtitle(label="Spending vs. Percent Whiteness on a County Level",
           subtitle=paste("Correlation between spendinnd Whiteness = ", spending_cors["White"]))
+```
 
+```{r, fig.width=12, fig.height=8}
 ggplot(USA_county_delta, aes(x = median_age, y = log(spending))) + 
   military_theme + theme(plot.title = element_text(hjust = 0)) +
   geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
