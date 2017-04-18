@@ -5,14 +5,14 @@ output:
   html_document: default
 ---
 ## Introduction
-The United States Defence Department's [1033 program](https://en.wikipedia.org/wiki/1033_program) began in 1997, it allows for the transfer of excess military equipment to civilian law enforcement agencies. Most of the equipment obtained are things such as cold weather clothing, deisel generators and flashlights. However, a significant portion of it is explicitly combat-orientated in nature, such as M-16 rifles, tanks, and mine-resistant vehicles.  
+The United States Defence Department's [1033 program](https://en.wikipedia.org/wiki/1033_program) began in 1997, it allows for the transfer of excess military equipment to civilian law enforcement agencies. Most of the equipment obtained is standard, things such as cold weather clothing, deisel generators and flashlights. However, a significant portion of it is explicitly combat-orientated in nature, equipment such as M-16 rifles, tanks, and mine-resistant vehicles.  
   
 This is an analysis that explores U.S. civilian law enforcement spending on the acquisition of military equipment that is explicitly combat-orientated. Spending is examined at a state and county level, other county-level data such as crime and poverty rates are incorporated and their relationship to spending is also investigated.  
   
 Please e-mail comments and suggestions to [vcolano@gmail.com](mailto:vcolano@gmail.com).
 
 ## About the data
-In May 2014 the New York Times filed a freedom of information act request and received from the Pentagon data on all acquisitions since 2006. The data was made public by the NYT and can be found [here](https://github.com/TheUpshot/Military-Surplus-Gear). The NYT wrote a post with an interactive data visualization on the topic: [What Military Gear Your Local Police Department Bought
+The New York Times filed a freedom of information act request and received data from the Pentagon on all acquisitions since 2006. The data was made public by the NYT and can be found [here](https://github.com/TheUpshot/Military-Surplus-Gear). The NYT wrote a post with an interactive data visualization on the topic: [What Military Gear Your Local Police Department Bought
 ](https://www.nytimes.com/2014/08/20/upshot/data-on-transfer-of-military-gear-to-police-departments.html).  
   
 The data includes all acquisitons from 2006 to May of 2016 on a State and County level.
@@ -104,8 +104,9 @@ subset_costs_df$Total.Cost = subset_df$Acquisition.Cost[match(subset_costs_df$It
 subset_costs_df = subset_costs_df[with(subset_costs_df, order(-Total.Cost)), ]
 length(subset_costs_df$Total.Cost)
 sum(subset_costs_df$Total.Cost)
+sum(subset_costs_df$Total.Cost)/sum(costs_df$Total.Cost)
 ```
-All in all, there are 175 unique items in the subset with a total cost of \$609,879,850
+All in all, there are 175 unique items in the subset with a total cost of \$609,879,850. Out of all spending 48% of it was combat-orientated in nature.
 
 
 ## State-level analysis
@@ -151,7 +152,7 @@ statebins(states_df, "stateAbr", "spending", legend_position = "right", breaks=5
                      title_position = "top"))
 suppressWarnings(
 statebins(states_df, "stateAbr", "spendingPerCapita", legend_position = "right",
-                     legend_title="Spending per capita by state in USD", font_size = 5,
+                     legend_title="Spending per capita in USD", font_size = 5,
                      breaks = 5, labels=c("<$2","<$4","<$6","<$8","<$10"),
                      brewer_pal = "Greens", text_color = "black",
                      plot_title = "Spending per Capita from 2006-2014",
@@ -236,7 +237,7 @@ ggplot(data = highest_spenders, aes(x=reorder(Area_name, -spending), y=spending)
   scale_y_continuous(breaks=c(2000000, 4000000, 6000000, 8000000),
                      labels=c("$2mil", "$4mil", "$6mil", "$8mil")) + 
   military_theme + theme(axis.text.x = element_text(angle=45, hjust=1), plot.title = element_text(hjust = 0)) +
-  xlab("Number of Counties") + ylab("Total Spending in USD") + 
+  xlab("Counties") + ylab("Total Spending in USD") + 
   ggtitle("Highest spending by County"))
 ```
 ```{r, fig.width=12, fig.height=8}
@@ -247,7 +248,7 @@ ggplot(data = head(counties_df[order(-counties_df$spendingPerCapita), ], n=10), 
   scale_x_discrete(labels=counties_df$Area_name) + 
   scale_y_continuous(labels = comma, limits = c(0, 300)) + 
   military_theme + theme(axis.text.x = element_text(angle=45, hjust=1), plot.title = element_text(hjust = 0)) +
-  xlab("Number of Counties") + ylab("Spending per capita in USD") + 
+  xlab("Counties") + ylab("Spending per capita in USD") + 
   ggtitle("Highest spending per capita by county"))
 ```
 
@@ -336,6 +337,7 @@ levelplot(spending_cors~y*x, data=res, col.regions=my.cols,
                        lab=rownames(res), fontfamily="Courier New")
           })
 ```
+Population is the most heavily correlated with spending, it should be noted that factors which are not scaled for population (such as sales and office occupations) have positively skewed correlation coefficients because of this. Factors that are adjusted for population (rates, averages, percentages, etc.) have coefficients that are more telling of the true relationship with spending.
 
 ```{r, fig.width=12, fig.height=8}
 ggplot(counties_df, aes(x = log(poverty), y = log(spending))) + 
@@ -347,28 +349,37 @@ ggplot(counties_df, aes(x = log(poverty), y = log(spending))) +
 ```
 
 ```{r, fig.width=12, fig.height=8}
+suppressWarnings(
 ggplot(counties_df, aes(x = log(crime), y = log(spending))) + 
   military_theme + theme(plot.title = element_text(hjust = 0)) +
   geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
   xlab("Average Violent Crimes Known to Police per Year from 2006-2008") + ylab("Spending (log smoothed)") +
   ggtitle(label="Spending vs. Crime on a County Level",
-          subtitle=paste("Correlation between spending and crime = ", spendCrimeCor))
+          subtitle=paste("Correlation between spending and crime = ", spendCrimeCor)))
 ```
 
 ```{r, fig.width=12, fig.height=8}
+suppressWarnings(
 ggplot(USA_county_delta, aes(x = White, y = log(spending))) + 
   military_theme + theme(plot.title = element_text(hjust = 0)) +
   geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
   xlab("Percent White") + ylab("Spending (log smoothed)") +
   ggtitle(label="Spending vs. Percent Whiteness on a County Level",
-          subtitle=paste("Correlation between spendinnd Whiteness = ", spending_cors["White"]))
+          subtitle=paste("Correlation between spendinnd Whiteness = ", spending_cors["White"])))
 ```
 
 ```{r, fig.width=12, fig.height=8}
+suppressWarnings(
 ggplot(USA_county_delta, aes(x = median_age, y = log(spending))) + 
   military_theme + theme(plot.title = element_text(hjust = 0)) +
   geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
   xlab("Median Age") + ylab("Spending (log smoothed)") +
   ggtitle(label="Spending vs. Median Age on a County Level",
-          subtitle=paste("Correlation between spending and median age = ", spending_cors["median_age"]))
+          subtitle=paste("Correlation between spending and median age = ", spending_cors["median_age"])))
 ```
+
+## Conclusion and Discussion
+Roughly half of all money spent through the 1033 program from 2006 to May 2016 was on equipment that is combat-orientated in nature. In total over the almost 10-year period, \$609,879,850 was spent by counties on combat-orientated equipment.  
+On a state level, Alabama and Tennessee are noteable outliers, they ranked in the top 3 highest total spending and per capita spending state.  
+Three quarters of all counties in the U.S. spent something on combat-orientated military equipment and most spent less than \$100,000. The counties with the highest spending per capita are rural low-population counties.  
+Counties with higher crime and poverty rates tend to have more spending, while whiter and older counties tend to have a bit less.  
