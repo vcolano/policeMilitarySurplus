@@ -275,7 +275,7 @@ ggplot(counties_df, aes(x = log(poverty), y = log(spending))) +
 ggplot(counties_df, aes(x = log(crime), y = log(spending))) + 
   military_theme + theme(plot.title = element_text(hjust = 0)) +
   geom_point(colour="#4b5320") + geom_smooth(method='lm', formula=y~x, colour="#454955") +
-  xlab("Average Violent Crimes Known to Police per Year from 2006-2008") + ylab("Spending (log smoothed)") +
+  xlab("Avg. Violent Crimes Known to Police per Year from 06-08 (log smoothed)") + ylab("Spending (log smoothed)") +
   ggtitle(label="Spending vs. Crime on a County Level",
           subtitle=paste("Correlation between spending and crime = ", spendCrimeCor))
 
