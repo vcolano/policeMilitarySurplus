@@ -1,21 +1,19 @@
 ---
 title: "An Exploratory Analysis of Police Acquisition of Militarized Equipment"
 output:
-  html_notebook: default
   html_document: default
+  html_notebook: default
 ---
 ## Introduction
-The United States Defence Department's [1033 program](https://en.wikipedia.org/wiki/1033_program) began in 1997, it allows for the transfer of excess military equipment to civilian law enforcement agencies. Most of the equipment obtained is standard, things such as cold weather clothing, deisel generators and flashlights. However, a significant portion of it is explicitly combat-oriented in nature, equipment such as M-16 rifles, tanks, and mine-resistant vehicles.  
+The United States Defence Department's [1033 program](https://en.wikipedia.org/wiki/1033_program) began in 1997, it allows for the transfer of excess military equipment to civilian law enforcement agencies. Most of the equipment obtained is standard, things such as cold weather clothing, diesel generators and flashlights. However, a significant portion of it is explicitly combat-oriented in nature, equipment such as M-16 rifles, tanks, and mine-resistant vehicles.  
   
 This is an analysis that explores U.S. civilian law enforcement spending on the acquisition of military equipment that is explicitly combat-oriented. Spending is examined at a state and county level, other county-level data such as crime and poverty rates are incorporated and their relationship to spending is also investigated.  
   
 Please e-mail comments and suggestions to [vcolano@gmail.com](mailto:vcolano@gmail.com).
 
 ## About the data
-The New York Times filed a freedom of information act request and received data from the Pentagon on all acquisitions since 2006. The data was made public by the NYT and can be found [here](https://github.com/TheUpshot/Military-Surplus-Gear). The NYT wrote a post with an interactive data visualization on the topic: [What Military Gear Your Local Police Department Bought
+In 2014 the New York Times filed a freedom of information act request and received data from the Pentagon on all acquisitions since 2006. The data was made public by the NYT, it can be found [here](https://github.com/TheUpshot/Military-Surplus-Gear). The NYT wrote a post with an interactive data visualization on the topic: [What Military Gear Your Local Police Department Bought
 ](https://www.nytimes.com/2014/08/20/upshot/data-on-transfer-of-military-gear-to-police-departments.html).  
-  
-The data includes all acquisitons from 2006 to May of 2016 on a State and County level.
 
 ## Setup
 Load libraries and import the police acquisitions data set.
@@ -78,7 +76,7 @@ head(costs_df, n=20)
 ## Extracting a purely-militarized subset
 There is some equipment which is objectively non-militarized, such as the dump trucks, fork lifts and diesel generators. To focus this analysis on the militarization of US police forces we'll reduce the data to a subset that is explicitly militarized in nature, items which could serve little to no purpose in the policing of civilians. For simplicity, only the first 100 items with the highest total cost were examined manually. Other items containing keywords which indicate that they are militarized are also added.
 
-Disclaimer: There is subjectivity as to what is "militarized" and what is not. While items were thoroughly researched by looking up their NSN, the author does not have significant knowledge of this domain.
+Disclaimer: There is subjectivity as to what is "militarized" and what is not. While items were researched by looking up their NSN, the author does not have significant knowledge of this domain.
 ```{r}
 subset = c("TRUCK,UTILITY",  "MINE RESISTANT VEHICLE", "ONLY COMPLETE COMBAT/ASSAULT/TACTICAL WHEELED VEHICLES",
            "RIFLE,5.56 MILLIMETER", "ILLUMINATOR,INFRARED", "TRUCK,CARGO", "TRUCK,VAN",
@@ -232,7 +230,7 @@ ggplot(data = counties_df, aes(x=counties_df$spendingPerCapita)) +
 ```{r, fig.width=12, fig.height=8}
 # plot the counties which spent the most 
 suppressWarnings(
-ggplot(data = highest_spenders, aes(x=reorder(Area_name, -spending), y=spending)) + 
+ggplot(data = head(counties_df[order(-counties_df$spending), ], n=10), aes(x=reorder(Area_name, -spending), y=spending)) + 
   geom_histogram(stat="identity", fill="#4b5320") +
   scale_y_continuous(breaks=c(2000000, 4000000, 6000000, 8000000),
                      labels=c("$2mil", "$4mil", "$6mil", "$8mil")) + 
@@ -341,7 +339,7 @@ Most of the factors have correlation coefficients very close to 0 which implies 
   
 The most telling factors are the top three. The positive correlation of total population and spending is somewhat intuitive, however the positive correlation of crime and poverty with spending is more interesting. What this tells us is that poorer, more crime-ridden counties tend to have higher spending on combat-oriented equipment.  
   
-There is also a more nuanced relationship explained by the variables with weaker correlations. We see that non-white populations have weak positive correlations and white population has a weak negative correlation, median age has a weak negative correlation, population density has a weak positive correlation and white collar occupations have weak positive correlation while blue collar occupations have weak negative correlations. What does all of this tell us? Counties that are whiter, more rural, older and more blue collar tend to have less spending on combat-oriented equipment than less white, more white collar and more urban ones do.
+There is also a more nuanced relationship explained by the variables with weaker correlations. We see that non-white populations have weak positive correlations and white population has a weak negative correlation, median age has a weak negative correlation, population density has a weak positive correlation and white collar occupations have weak positive correlation while blue collar occupations have weak negative correlations. What does all of this tell us? Counties that are whiter, more rural, older and more blue collar slightlytend to have less spending on combat-oriented equipment than less white, more white collar and more urban ones do.
 
 
 ```{r, fig.width=12, fig.height=8}
